@@ -1,0 +1,17 @@
+{
+    "name": "roadmap.js",
+    "version": "0.0.1",
+    "description": "A simple roadmap display library",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/florentsolt/roadmap.js.git"
+    },
+    "main": "roadmap.js",
+    "devDependencies": {
+        "grunt": "~0.4.0",
+        "grunt-contrib-jshint": "~0.10.0",
+        "grunt-contrib-uglify": "~0.6.0"
+    },
+    "author": "Florent Solt",
+    "license": "MIT"
+}

@@ -1,0 +1,8 @@
+{
+   "browserify": true,
+   "browser": true,
+   "globals": {
+       "modules": true,
+       "console": true
+   }
+}
