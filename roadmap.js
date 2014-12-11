@@ -45,10 +45,10 @@
     // Drawing
     var barHeight = 20;
     var gap = barHeight + 4;
-    var topPadding = 75;
+    var topPadding = 20;
 
     // Init width and height
-    var h = tasks.length * gap + topPadding + 70;
+    var h = tasks.length * gap + topPadding + 40;
     var w = node.clientWidth;
 
     // Init d3
@@ -60,6 +60,7 @@
 
     // Init time scale
     var timeScale = d3.time.scale()
+      .clamp(true)
       .domain([
         d3.min(tasks, function(d) {
           return dateFormat.parse(d.from);
@@ -150,8 +151,26 @@
 
     // Draw vertical grid
     var xAxisGroup = svg.append('g')
-      .attr('transform', 'translate(' + sidePadding + ', ' + (h - 60) + ')')
+      .attr('transform', 'translate(' + sidePadding + ', ' + (h - 30) + ')')
       .call(xAxis);
+
+    // Now
+    var now = new Date();
+    if (now > timeScale.domain()[0] && now < timeScale.domain()[1]) {
+      xAxisGroup
+        .append("line")
+        .attr("x1", timeScale(now))
+        .attr("y1", 0)
+        .attr("x2", timeScale(now))
+        .attr("y2", -h + topPadding + 20)
+        .attr("class", "now");
+
+      xAxisGroup.selectAll('.now')
+        .attr("stroke", "red")
+        .attr("opacity", 0.5)
+        .attr("stroke-dasharray", "2,2")
+        .attr("shape-rendering", "crispEdges");
+    }
 
     xAxisGroup.selectAll("text")
       .style("text-anchor", "middle")
@@ -160,7 +179,7 @@
       .attr("font-size", 10)
       .attr("dy", "1em");
 
-    xAxisGroup.selectAll('line')
+    xAxisGroup.selectAll('.tick line')
       .attr("stroke", "lightgrey")
       .attr("shape-rendering", "crispEdges");
 
