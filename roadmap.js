@@ -1,53 +1,55 @@
 (function() {
 
-  // For d3
-  var colors = d3.scale.category10();
-  var dateFormat = d3.time.format("%Y-%m-%d");
+  var init = function() {
+    // Tasks
+    var elements = document.getElementsByClassName("roadmap");
 
-  // Tasks
-  var elements = document.getElementsByClassName("roadmap");
-  var tasks = [];
-  var currentTask = {};
+    for (var i = 0, element; element = elements[i], typeof element !== "undefined"; i++) {
+      var tasks = [];
+      var currentTask = {};
 
-  // Drawing
-  var barHeight = 20;
-  var gap = barHeight + 4;
-  var topPadding = 75;
+      lines = (element.textContent || element.innerHTML || "").split("\n");
+      for (var j = 0, line; line = lines[j], j < lines.length; j++) {
+        line = line.replace(/^\s+|\s+$/g, '');
 
-  for (var i = 0, element; element = elements[i], typeof element !== "undefined"; i++) {
-    lines = (element.textContent || element.innerHTML || "").split("\n");
-    for (var j = 0, line; line = lines[j], j < lines.length; j++) {
-      line = line.replace(/^\s+|\s+$/g, '');
+        if (!currentTask.name && !currentTask.group) {
+          texts = line.split(",");
+          currentTask.group = texts[0];
+          currentTask.name = texts.slice(1).join(",");
+          continue;
+        }
 
-      if (!currentTask.name && !currentTask.group) {
-        texts = line.split(",");
-        currentTask.group = texts[0];
-        currentTask.name = texts.slice(1).join(",");
-        continue;
+        if (!currentTask.from && !currentTask.to) {
+          texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
+          currentTask.from = texts[0];
+          currentTask.to = texts[1];
+          continue;
+        }
+
+        if (line === "" && currentTask.name) {
+          tasks.push(currentTask);
+          currentTask = {};
+          continue;
+        }
       }
-
-      if (!currentTask.from && !currentTask.to) {
-        texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
-        currentTask.from = texts[0];
-        currentTask.to = texts[1];
-        continue;
-      }
-
-      if (line === "" && currentTask.name) {
-        tasks.push(currentTask);
-        currentTask = {};
-        continue;
-      }
+      element.innerHTML = "";
+      draw(element, tasks);
     }
-    element.innerHTML = "";
-    draw(element, tasks);
-  }
+  };
 
-  function draw(node, tasks) {
+  var draw = function(node, tasks) {
+    // For d3
+    var colors = d3.scale.category10();
+    var dateFormat = d3.time.format("%Y-%m-%d");
+
+    // Drawing
+    var barHeight = 20;
+    var gap = barHeight + 4;
+    var topPadding = 75;
 
     // Init width and height
     var h = tasks.length * gap + topPadding + 70;
-    var w = element.clientWidth;
+    var w = node.clientWidth;
 
     // Init d3
     var svg = d3.select(node)
@@ -221,5 +223,15 @@
       .attr("text-height", barHeight)
       .attr("fill", "#000");
 
-  }
+  };
+
+  document.addEventListener('DOMContentLoaded', function(){
+    if(typeof window.Roadmap === 'undefined') {
+      init();
+    }
+    window.Roadmap = {
+      init: init
+    };
+  });
+
 })();
