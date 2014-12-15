@@ -48,4 +48,4 @@ Add a `<div class="roadmap">` in your page like this one:
 </div>
 ```
 
-![Example](exmaple.png)
+![Example](example.png)
