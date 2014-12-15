@@ -1,4 +1,5 @@
 roadmap.js
 ===========
 
-A simple roadmap display library
+A simple roadmap display library.
+

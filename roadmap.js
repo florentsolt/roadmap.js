@@ -245,7 +245,6 @@
       .attr("text-anchor", "middle")
       .attr("text-height", barHeight)
       .attr("fill", "#000");
-
   };
 
   document.addEventListener('DOMContentLoaded', function(){
