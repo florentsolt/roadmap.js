@@ -47,3 +47,6 @@ Add a `<div class="roadmap">` in your page like this one:
   2015-1-26 > 2015-2-22
 </div>
 ```
+You will get:
+
+![Example](example.png)
