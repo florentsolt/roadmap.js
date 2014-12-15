@@ -4,7 +4,7 @@
     // Tasks
     var elements = document.getElementsByClassName("roadmap");
 
-    for (var i = 0, element; element = elements[i], typeof element !== "undefined"; i++) {
+    for (var i = 0, element; element = elements[i]; i++) {
       if (element.nodeName === "DIV") {
         var tasks = [];
         var currentTask = {};

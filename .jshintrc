@@ -4,5 +4,6 @@
    "globals": {
        "modules": true,
        "console": true
-   }
+   },
+   "boss": true
 }
