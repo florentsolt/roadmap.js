@@ -2,43 +2,40 @@
 
   var init = function() {
     // Tasks
-    var elements = document.getElementsByClassName("roadmap");
 
-    for (var i = 0, element; element = elements[i]; i++) {
-      if (element.nodeName === "DIV") {
-        var tasks = [];
-        var currentTask = {};
+    d3.selectAll("div.roadmap").each(function() {
+      var tasks = [];
+      var currentTask = {};
 
-        lines = (element.textContent || element.innerHTML || "").split("\n");
-        for (var j = 0, line; line = lines[j], j < lines.length; j++) {
-          line = line.replace(/^\s+|\s+$/g, '');
+      lines = (this.textContent || this.innerHTML || "").split("\n");
+      for (var j = 0, line; line = lines[j], j < lines.length; j++) {
+        line = line.replace(/^\s+|\s+$/g, '');
 
-          if (!currentTask.name && !currentTask.group) {
-            texts = line.split(",");
-            currentTask.group = texts[0];
-            currentTask.name = texts.slice(1).join(",");
-            continue;
-          }
-
-          if (!currentTask.from && !currentTask.to) {
-            texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
-            currentTask.from = texts[0];
-            currentTask.to = texts[1];
-            continue;
-          }
-
-          if (line === "" && currentTask.name) {
-            tasks.push(currentTask);
-            currentTask = {};
-            continue;
-          }
+        if (!currentTask.name && !currentTask.group) {
+          texts = line.split(",");
+          currentTask.group = texts[0];
+          currentTask.name = texts.slice(1).join(",");
+          continue;
         }
-        if (tasks.length > 0) {
-          element.innerHTML = "";
-          draw(element, tasks);
+
+        if (!currentTask.from && !currentTask.to) {
+          texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
+          currentTask.from = texts[0];
+          currentTask.to = texts[1];
+          continue;
+        }
+
+        if (line === "" && currentTask.name) {
+          tasks.push(currentTask);
+          currentTask = {};
+          continue;
         }
       }
-    }
+      if (tasks.length > 0) {
+        this.innerHTML = "";
+        draw(this, tasks);
+      }
+    });
   };
 
   var draw = function(node, tasks) {
