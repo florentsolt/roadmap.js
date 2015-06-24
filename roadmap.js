@@ -70,7 +70,8 @@
           var date = dateFormat.parse(d.to);
           return date.setHours(date.getHours() + 24);
         })
-      ]).range([0, w - 150]);
+      ]).range([0, w - 180]);
+
 
     // Filter groups
     var groups = [];
