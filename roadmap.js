@@ -2,22 +2,27 @@
 
   var init = function() {
     // Tasks
+    var colors = d3.scale.category10();
 
     d3.selectAll("div.roadmap").each(function() {
       var tasks = [];
+      var people = [];
       var currentTask = {};
 
       lines = (this.textContent || this.innerHTML || "").split("\n");
       for (var j = 0, line; line = lines[j], j < lines.length; j++) {
         line = line.replace(/^\s+|\s+$/g, '');
 
+        // 1st line, project name followed by task name
         if (!currentTask.name && !currentTask.group) {
           texts = line.split(",");
           currentTask.group = texts[0];
           currentTask.name = texts.slice(1).join(",");
+          currentTask.color = colors(currentTask.group);
           continue;
         }
 
+        // 2nd line, dates from and to
         if (!currentTask.from && !currentTask.to) {
           texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
           currentTask.from = texts[0];
@@ -25,31 +30,49 @@
           continue;
         }
 
+        // next lines, people
+        if (line !== "") {
+          people.push({
+            group: line,
+            from: currentTask.from,
+            to: currentTask.to,
+            name: currentTask.group + ", " + currentTask.name,
+            color: colors(currentTask.group)
+          });
+          continue;
+        }
+
+        // last line, empty
         if (line === "" && currentTask.name) {
           tasks.push(currentTask);
           currentTask = {};
           continue;
         }
       }
+
       if (tasks.length > 0) {
         this.innerHTML = "";
-        draw(this, tasks);
+        var height = draw(this, tasks);
+        people.sort(function(a, b) {
+          return a.group > b.group;
+        });
+        draw(this, people, height + 50);
       }
     });
+
   };
 
-  var draw = function(node, tasks) {
+  var draw = function(node, items, topMargin) {
     // For d3
-    var colors = d3.scale.category10();
     var dateFormat = d3.time.format("%Y-%m-%d");
 
     // Drawing
     var barHeight = 20;
     var gap = barHeight + 4;
-    var topPadding = 20;
+    var topPadding = 20 + ( topPadding || 0 );
 
     // Init width and height
-    var h = tasks.length * gap + topPadding + 40;
+    var h = items.length * gap + topPadding + 40;
     var w = node.clientWidth;
 
     // Init d3
@@ -59,41 +82,27 @@
       .attr("height", h)
       .attr("style", "overflow: visible");
 
-    // Init time scale
-    var timeScale = d3.time.scale()
-      .clamp(true)
-      .domain([
-        d3.min(tasks, function(d) {
-          return dateFormat.parse(d.from);
-        }),
-        d3.max(tasks, function(d) {
-          var date = dateFormat.parse(d.to);
-          return date.setHours(date.getHours() + 24);
-        })
-      ]).range([0, w - 180]);
-
-
     // Filter groups
     var groups = [];
     var total = 0;
-    for (var i = 0; i < tasks.length; i++){
+    for (var i = 0; i < items.length; i++){
       var j = 0;
       var found = false;
       while (j < groups.length && !found) {
-        found = (groups[j].name === tasks[i].group);
+        found = (groups[j].name === items[i].group);
         j++;
       }
       if (!found) {
         var count = 0;
         j = 0;
-        while (j < tasks.length) {
-          if (tasks[j].group == tasks[i].group) {
+        while (j < items.length) {
+          if (items[j].group == items[i].group) {
             count++;
           }
           j++;
         }
         groups.push({
-          name: tasks[i].group,
+          name: items[i].group,
           count: count,
           previous: total
         });
@@ -101,7 +110,7 @@
       }
     }
 
-    // Draw vertical boxes
+    // Draw vertical group boxes
     svg.append("g")
       .selectAll("rect")
       .data(groups)
@@ -143,12 +152,25 @@
 
     var sidePadding = axisText[0].parentNode.getBBox().width + 15;
 
+    // Init time scale
+    var timeScale = d3.time.scale()
+      .clamp(true)
+      .domain([
+        d3.min(items, function(d) {
+          return dateFormat.parse(d.from);
+        }),
+        d3.max(items, function(d) {
+          var date = dateFormat.parse(d.to);
+          return date.setHours(date.getHours() + 24);
+        })
+      ]).range([0, w - sidePadding - 15]);
+
     // Init X Axis
     var xAxis = d3.svg.axis()
       .scale(timeScale)
       .orient('bottom')
       .ticks(d3.time.monday)
-      .tickSize(-h + topPadding + 40, 0, 0)
+      .tickSize(-h + topPadding + 20, 0, 0)
       .tickFormat(d3.time.format('%b %d'));
 
     // Draw vertical grid
@@ -182,16 +204,16 @@
       .attr("dy", "1em");
 
     xAxisGroup.selectAll('.tick line')
-      .attr("stroke", "lightgrey")
+      .attr("stroke", "#dddddd")
       .attr("shape-rendering", "crispEdges");
 
-    // Tasks group
+    // Items group
     var rectangles = svg.append('g')
       .selectAll("rect")
-      .data(tasks)
+      .data(items)
       .enter();
 
-    // Draw tasks boxes
+    // Draw items boxes
     rectangles.append("rect")
       .attr("rx", 3)
       .attr("ry", 3)
@@ -209,25 +231,11 @@
       .attr("height", barHeight)
       .attr("stroke", "none")
       .attr("fill", function(d) {
-        for (var i = 0; i < groups.length; i++){
-          if (d.group == groups[i].name){
-            return colors(i);
-          }
-        }
+        return d.color;
       })
-      .attr("fill-opacity", function(d) {
-        var opacity = 1;
-        for (var i = 0; i < tasks.length; i++){
-          if (d == tasks[i]) {
-            return Math.max(opacity, 0.1);
-          }
-          if (d.group == tasks[i].group){
-            opacity -= 0.3;
-          }
-        }
-      });
+      .attr("fill-opacity", 0.5);
 
-    // Draw tasks texts
+    // Draw items texts
     rectangles.append("text")
       .text(function(d){
         return d.name;
@@ -243,6 +251,8 @@
       .attr("text-anchor", "middle")
       .attr("text-height", barHeight)
       .attr("fill", "#000");
+
+    return h;
   };
 
   document.addEventListener('DOMContentLoaded', function(){
