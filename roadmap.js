@@ -16,6 +16,7 @@
         // 1st line, project name followed by task name
         if (!currentTask.name && !currentTask.group) {
           texts = line.split(",");
+          currentTask.type = "task";
           currentTask.group = texts[0];
           currentTask.name = texts.slice(1).join(",");
           currentTask.color = colors(currentTask.group);
@@ -33,10 +34,12 @@
         // next lines, people
         if (line !== "") {
           people.push({
+            type: "people",
             group: line,
             from: currentTask.from,
             to: currentTask.to,
-            name: currentTask.group + ", " + currentTask.name,
+            name: currentTask.group + " — " + currentTask.name,
+            taskGroup: currentTask.group,
             color: colors(currentTask.group)
           });
           continue;
@@ -104,6 +107,7 @@
           j++;
         }
         groups.push({
+          type: "group",
           name: items[i].group,
           count: count,
           previous: total
@@ -217,6 +221,9 @@
 
     // Draw items boxes
     rectangles.append("rect")
+      .attr("class", function(d) {
+        return "item " + makeSafeForCSS(getGroupName(d));
+      })
       .attr("rx", 3)
       .attr("ry", 3)
       .attr("x", function(d){
@@ -235,10 +242,16 @@
       .attr("fill", function(d) {
         return d.color;
       })
-      .attr("fill-opacity", 0.5);
+      .attr("fill-opacity", 0.5)
+      .on("mouseover", mouseOver)
+      .on("mouseout", mouseOut)
+      .on('click', selectOneGroup);
 
     // Draw items texts
     rectangles.append("text")
+      .attr("class", function(d) {
+        return "item " + makeSafeForCSS(getGroupName(d));
+      })
       .text(function(d){
         return d.name;
       })
@@ -252,14 +265,58 @@
       .attr("font-size", 11)
       .attr("text-anchor", "middle")
       .attr("text-height", barHeight)
-      .attr("fill", "#000");
+      .attr("fill", "#000")
+      .on("mouseover", mouseOver)
+      .on("mouseout", mouseOut)
+      .on('click', selectOneGroup);
 
     return h;
   };
 
+  function getGroupName(d) {
+    switch (d.type) {
+      case "people":
+        return d.taskGroup;
+      case "task":
+        return d.group;
+      case "group":
+        return d.name;
+    }
+  }
+
+  function mouseOut() {
+
+  }
+
+  function mouseOver () {
+    d3.select(this).style({cursor:'pointer'});
+  }
+
+  function selectOneGroup(d) {
+    var klass = (d ? makeSafeForCSS(getGroupName(d)) : window.location.hash.substr(1));
+
+    if (d && window.location.hash === '#' + klass) {
+      d3.selectAll(".item").style("opacity", 1);
+      window.location.hash = '';
+    } else {
+      d3.selectAll(".item").style("opacity", 0.2);
+      d3.selectAll("." + klass).style("opacity", 1);
+      window.location.hash = klass;
+    }
+  }
+
+  function makeSafeForCSS(name) {
+      return "_" + name.toLowerCase().replace(/[^a-z0-9]+/g, function(s) {
+          return '-';
+      });
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     if(typeof window.Roadmap === 'undefined') {
       init();
+      if (window.location.hash.substr(1) !== '') {
+        selectOneGroup();
+      }
     }
     window.Roadmap = {
       init: init
