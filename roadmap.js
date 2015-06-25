@@ -54,7 +54,7 @@
         this.innerHTML = "";
         var height = draw(this, tasks);
         people.sort(function(a, b) {
-          return a.group > b.group;
+          return a.group > b.group ? 1 : -1;
         });
         if (people.length > 0) {
           draw(this, people, height + 50);
