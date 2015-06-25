@@ -56,7 +56,9 @@
         people.sort(function(a, b) {
           return a.group > b.group;
         });
-        draw(this, people, height + 50);
+        if (people.length > 0) {
+          draw(this, people, height + 50);
+        }
       }
     });
 
