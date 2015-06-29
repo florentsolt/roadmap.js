@@ -4,7 +4,7 @@
 
   var init = function() {
     // Tasks
-    var colors = d3.scale.category10();
+    var colors = d3.scale.category20();
 
     d3.selectAll("div.roadmap").each(function() {
       var tasks = [];
