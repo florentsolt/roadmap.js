@@ -1,4 +1,6 @@
 (function() {
+  // Current selected group
+  var selected = false;
 
   var init = function() {
     // Tasks
@@ -86,6 +88,16 @@
       .attr("width", w)
       .attr("height", h)
       .attr("style", "overflow: visible");
+
+    // Sort items
+    items.sort(function(a, b) {
+      if (a.group === b.group) {
+        return dateFormat.parse(a.from) > dateFormat.parse(b.from) ? 1 : -1;
+      } else {
+        return a.group > b.group ? 1 : -1;
+      }
+    });
+
 
     // Filter groups
     var groups = [];
@@ -293,15 +305,15 @@
   }
 
   function selectOneGroup(d) {
-    var klass = (d ? makeSafeForCSS(getGroupName(d)) : window.location.hash.substr(1));
+    var klass = makeSafeForCSS(getGroupName(d));
 
-    if (d && window.location.hash === '#' + klass) {
+    if (selected === klass) {
       d3.selectAll(".item").style("opacity", 1);
-      window.location.hash = '';
+      selected = false;
     } else {
       d3.selectAll(".item").style("opacity", 0.2);
       d3.selectAll("." + klass).style("opacity", 1);
-      window.location.hash = klass;
+      selected = klass;
     }
   }
 
@@ -314,9 +326,6 @@
   document.addEventListener('DOMContentLoaded', function(){
     if(typeof window.Roadmap === 'undefined') {
       init();
-      if (window.location.hash.substr(1) !== '') {
-        selectOneGroup();
-      }
     }
     window.Roadmap = {
       init: init
