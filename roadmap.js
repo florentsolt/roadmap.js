@@ -297,18 +297,18 @@
       .attr("rx", 3)
       .attr("ry", 3)
       .attr("width", 50)
-      .style("height", barHeight)
-      .style("stroke", "none")
-      .style("fill", "black")
-      .style("fill-opacity", 0.8)
+      .attr("height", barHeight)
+      .attr("stroke", "none")
+      .attr("fill", "black")
+      .attr("fill-opacity", 0.8)
       .style("display", "none");
 
     var verticalMouseText = svg.append("text")
-      .style("font-size", 11)
-      .style("font-weight", "bold")
-      .style("text-anchor", "middle")
-      .style("text-height", barHeight)
-      .style("fill", "white")
+      .attr("font-size", 11)
+      .attr("font-weight", "bold")
+      .attr("text-anchor", "middle")
+      .attr("text-height", barHeight)
+      .attr("fill", "white")
       .style("display", "none");
 
     var verticalMouseTopPadding = 40;
