@@ -3,6 +3,12 @@ roadmap.js
 
 A simple roadmap display library.
 
+How to use
+----------
+
+Load `d3.js` then load `roadmap.js`.
+That's it!
+
 Example
 -------
 
