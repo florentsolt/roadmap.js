@@ -57,26 +57,26 @@
 
       if (tasks.length > 0) {
         this.innerHTML = "";
-        var height = draw(this, tasks);
+        var options = draw(this, tasks, {});
         people.sort(function(a, b) {
           return a.group > b.group ? 1 : -1;
         });
         if (people.length > 0) {
-          draw(this, people, height + 50);
+          draw(this, people, options);
         }
       }
     });
 
   };
 
-  var draw = function(node, items, topMargin) {
+  var draw = function(node, items, options) {
     // For d3
     var dateFormat = d3.time.format("%Y-%m-%d");
 
     // Drawing
     var barHeight = 20;
     var gap = barHeight + 4;
-    var topPadding = 20 + ( topPadding || 0 );
+    var topPadding = 20;
 
     // Init width and height
     var h = items.length * gap + topPadding + 40;
@@ -97,7 +97,6 @@
         return a.group > b.group ? 1 : -1;
       }
     });
-
 
     // Filter groups
     var groups = [];
@@ -168,7 +167,7 @@
       .attr("text-height", 14)
       .attr("fill", "#000");
 
-    var sidePadding = axisText[0].parentNode.getBBox().width + 15;
+    var sidePadding = options.sidePadding || axisText[0].parentNode.getBBox().width + 15;
 
     // Init time scale
     var timeScale = d3.time.scale()
@@ -255,8 +254,9 @@
         return d.color;
       })
       .attr("fill-opacity", 0.5)
-      .on("mouseover", mouseOver)
-      .on("mouseout", mouseOut)
+      .on("mouseover", function() {
+        d3.select(this).style({cursor:'pointer'});
+      })
       .on('click', selectOneGroup);
 
     // Draw items texts
@@ -278,11 +278,78 @@
       .attr("text-anchor", "middle")
       .attr("text-height", barHeight)
       .attr("fill", "#000")
-      .on("mouseover", mouseOver)
-      .on("mouseout", mouseOut)
-      .on('click', selectOneGroup);
+      .style("pointer-events", "none");
 
-    return h;
+    // Draw vertical mouse helper
+    var verticalMouse = svg.append("line")
+      .attr("x1", 0)
+      .attr("y1", 0)
+      .attr("x2", 0)
+      .attr("y2", 0)
+      .style("stroke", "black")
+      .style("stroke-width", "1px")
+      .style("stroke-dasharray", "2,2")
+      .style("shape-rendering", "crispEdges")
+      .style("pointer-events", "none")
+      .style("display", "none");
+
+    var verticalMouseBox = svg.append("rect")
+      .attr("rx", 3)
+      .attr("ry", 3)
+      .attr("width", 50)
+      .style("height", barHeight)
+      .style("stroke", "none")
+      .style("fill", "black")
+      .style("fill-opacity", 0.8)
+      .style("display", "none");
+
+    var verticalMouseText = svg.append("text")
+      .style("font-size", 11)
+      .style("font-weight", "bold")
+      .style("text-anchor", "middle")
+      .style("text-height", barHeight)
+      .style("fill", "white")
+      .style("display", "none");
+
+    var verticalMouseTopPadding = 40;
+
+    svg.on("mousemove", function () {
+      var xCoord = d3.mouse(this)[0],
+          yCoord = d3.mouse(this)[1];
+
+      if (xCoord > sidePadding) {
+        verticalMouse
+            .attr("x1", xCoord)
+            .attr("y1", topPadding - 10)
+            .attr("x2", xCoord)
+            .attr("y2", h - 30)
+            .style("display", "block");
+
+        verticalMouseBox
+            .attr("x", xCoord - 25)
+            .attr("y", yCoord - (barHeight + 8) / 2 + verticalMouseTopPadding)
+            .style("display", "block");
+
+        verticalMouseText
+            .attr("transform", "translate(" + xCoord + "," + (yCoord + verticalMouseTopPadding) + ")")
+            .text(d3.time.format('%b %d')(timeScale.invert(xCoord - sidePadding)))
+            .style("display", "block");
+      } else {
+        verticalMouse.style("display", "none");
+        verticalMouseBox.style("display", "none");
+        verticalMouseText.style("display", "none");
+      }
+    });
+
+    svg.on("mouseleave", function() {
+      verticalMouse.style("display", "none");
+      verticalMouseBox.style("display", "none");
+      verticalMouseText.style("display", "none");
+    });
+
+    return {
+      sidePadding: sidePadding
+    };
   };
 
   function getGroupName(d) {
@@ -294,14 +361,6 @@
       case "group":
         return d.name;
     }
-  }
-
-  function mouseOut() {
-
-  }
-
-  function mouseOver () {
-    d3.select(this).style({cursor:'pointer'});
   }
 
   function selectOneGroup(d) {
