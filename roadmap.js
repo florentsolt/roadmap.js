@@ -146,7 +146,8 @@
           .append("pattern")
             .attr({ id: "pattern" + patterns, width:"8", height:"8", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"})
           .append("rect")
-            .attr({ width: Math.ceil(items[i].involvement * 8 / 100), height:"8", transform:"translate(0,0)", fill: items[i].color });
+            .attr({ width: Math.ceil(items[i].involvement * 8 / 100), height:"8",
+              transform:"translate(0,0)", fill: items[i].color, "fill-opacity": 0.8});
         items[i].color = "url(#pattern" + patterns + ')';
         patterns++;
       }
