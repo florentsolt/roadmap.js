@@ -35,6 +35,15 @@
 
         // next lines, people
         if (line !== "") {
+          var matches, involvement;
+
+          if (matches = line.match(/\s+(\d+)%\s*$/)) {
+            involvement = parseInt(matches[1], 10);
+            line = line.substr(0, - matches[0].length);
+          } else {
+            involvement = 100;
+          }
+
           people.push({
             type: "people",
             group: line,
@@ -42,7 +51,8 @@
             to: currentTask.to,
             name: currentTask.group + " — " + currentTask.name,
             taskGroup: currentTask.group,
-            color: colors(currentTask.group)
+            color: colors(currentTask.group),
+            involvement: involvement
           });
           continue;
         }
@@ -124,6 +134,21 @@
           previous: total
         });
         total += count;
+      }
+    }
+
+    // Patterns
+    var patterns = 0;
+
+    for (i = 0; i < items.length; i++) {
+      if (items[i].type == "people" && items[i].involvement != 100) {
+        svg.append("defs")
+          .append("pattern")
+            .attr({ id: "pattern" + patterns, width:"8", height:"8", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"})
+          .append("rect")
+            .attr({ width: Math.ceil(items[i].involvement * 8 / 100), height:"8", transform:"translate(0,0)", fill: items[i].color });
+        items[i].color = "url(#pattern" + patterns + ')';
+        patterns++;
       }
     }
 
