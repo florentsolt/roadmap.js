@@ -39,7 +39,7 @@
 
           if (matches = line.match(/\s+(\d+)%\s*$/)) {
             involvement = parseInt(matches[1], 10);
-            line = line.substr(0, - matches[0].length);
+            line = line.substring(0, line.length - matches[0].length);
           } else {
             involvement = 100;
           }
