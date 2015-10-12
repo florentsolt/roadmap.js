@@ -1,6 +1,5 @@
 module.exports = function(grunt) {
 
-  grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   var BANNER = [
@@ -19,17 +18,9 @@ module.exports = function(grunt) {
         banner: BANNER
       }
     },
-
-    jshint: {
-      files: ["roadmap.js"],
-      options: {
-        jshintrc: '.jshintrc'
-      }
-    }
   });
 
   grunt.registerTask('default', [
-      'jshint',
       'uglify'
   ]);
 
