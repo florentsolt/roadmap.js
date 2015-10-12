@@ -1,19 +1,51 @@
 (function() {
-  // Current selected group
-  var selected = false;
+  var tasks = [];
+  var people = [];
+  var node = null;
 
-  var init = function() {
+  var refresh = function(filter) {
+    if (tasks.length > 0) {
+      node.innerHTML = "";
+
+      if (filter) {
+        node.innerHTML = "<a style='display: inline-block; float: right; margin: 5px; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='#' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+      }
+
+      var options = draw(node, tasks.filter(function(task) {
+        if (filter && task.group !== filter) {
+          return false;
+        } else {
+          return true;
+        }
+      }), {});
+
+      people.sort(function(a, b) {
+        return a.group > b.group ? 1 : -1;
+      });
+
+      if (people.length > 0) {
+        draw(node, people.filter(function(person) {
+          if (filter && person.taskGroup !== filter) {
+            return false;
+          } else {
+            return true;
+          }
+        }), options);
+      }
+    }
+  };
+
+  var parse = function() {
     // Tasks
     var colors = d3.scale.category20();
 
     d3.selectAll("div.roadmap").each(function() {
-      var tasks = [];
-      var people = [];
       var currentTask = {};
 
-      lines = (this.textContent || this.innerHTML || "").split("\n");
+      var lines = (this.textContent || this.innerHTML || "").split("\n");
       for (var j = 0, line; line = lines[j], j < lines.length; j++) {
-        line = line.replace(/^\s+|\s+$/g, '');
+        var texts;
+        line = line.replace(/^\s+|\s+$/g, "");
 
         // 1st line, project name followed by task name
         if (!currentTask.name && !currentTask.group) {
@@ -27,7 +59,7 @@
 
         // 2nd line, dates from and to
         if (!currentTask.from && !currentTask.to) {
-          texts = line.replace(/[^0-9\-\/]+/, ' ').split(' ');
+          texts = line.replace(/[^0-9\-\/]+/, " ").split(" ");
           currentTask.from = texts[0];
           currentTask.to = texts[1];
           continue;
@@ -36,8 +68,9 @@
         // next lines, people
         if (line !== "") {
           var matches, involvement;
+          matches = line.match(/\s+(\d+)%\s*$/);
 
-          if (matches = line.match(/\s+(\d+)%\s*$/)) {
+          if (matches) {
             involvement = parseInt(matches[1], 10);
             line = line.substring(0, line.length - matches[0].length);
           } else {
@@ -65,16 +98,8 @@
         }
       }
 
-      if (tasks.length > 0) {
-        this.innerHTML = "";
-        var options = draw(this, tasks, {});
-        people.sort(function(a, b) {
-          return a.group > b.group ? 1 : -1;
-        });
-        if (people.length > 0) {
-          draw(this, people, options);
-        }
-      }
+      node = this;
+      refresh();
     });
 
   };
@@ -86,7 +111,7 @@
     // Drawing
     var barHeight = 20;
     var gap = barHeight + 4;
-    var topPadding = 20;
+    var topPadding = 20 + (options.topPadding || 0);
 
     // Init width and height
     var h = items.length * gap + topPadding + 40;
@@ -122,7 +147,7 @@
         var count = 0;
         j = 0;
         while (j < items.length) {
-          if (items[j].group == items[i].group) {
+          if (items[j].group === items[i].group) {
             count++;
           }
           j++;
@@ -141,14 +166,14 @@
     var patterns = 0;
 
     for (i = 0; i < items.length; i++) {
-      if (items[i].type == "people" && items[i].involvement != 100) {
+      if (items[i].type === "people" && items[i].involvement !== 100) {
         svg.append("defs")
           .append("pattern")
             .attr({ id: "pattern" + patterns, width:"8", height:"8", patternUnits:"userSpaceOnUse", patternTransform:"rotate(45)"})
           .append("rect")
             .attr({ width: Math.ceil(items[i].involvement * 8 / 100), height:"8",
               transform:"translate(0,0)", fill: items[i].color, "fill-opacity": 0.8});
-        items[i].color = "url(#pattern" + patterns + ')';
+        items[i].pattern = "url(#pattern" + patterns + ")";
         patterns++;
       }
     }
@@ -162,13 +187,13 @@
       .attr("rx", 3)
       .attr("ry", 3)
       .attr("x", 0)
-      .attr("y", function(d, i){
+      .attr("y", function(d){
         return d.previous * gap + topPadding;
       })
-      .attr("width", function(d){
+      .attr("width", function(){
         return w;
       })
-      .attr("height", function(d, i) {
+      .attr("height", function(d) {
         return d.count * gap - 4;
       })
       .attr("stroke", "none")
@@ -185,7 +210,7 @@
         return d.name;
       })
       .attr("x", 10)
-      .attr("y", function(d, i){
+      .attr("y", function(d){
         return d.count * gap / 2 + d.previous * gap + topPadding;
       })
       .attr("font-size", 11)
@@ -211,14 +236,14 @@
     // Init X Axis
     var xAxis = d3.svg.axis()
       .scale(timeScale)
-      .orient('bottom')
+      .orient("bottom")
       .ticks(d3.time.monday)
       .tickSize(-h + topPadding + 20, 0, 0)
-      .tickFormat(d3.time.format('%b %d'));
+      .tickFormat(d3.time.format("%b %d"));
 
     // Draw vertical grid
-    var xAxisGroup = svg.append('g')
-      .attr('transform', 'translate(' + sidePadding + ', ' + (h - 30) + ')')
+    var xAxisGroup = svg.append("g")
+      .attr("transform", "translate(" + sidePadding + ", " + (h - 30) + ")")
       .call(xAxis);
 
     // Now
@@ -232,7 +257,7 @@
         .attr("y2", -h + topPadding + 20)
         .attr("class", "now");
 
-      xAxisGroup.selectAll('.now')
+      xAxisGroup.selectAll(".now")
         .attr("stroke", "red")
         .attr("opacity", 0.5)
         .attr("stroke-dasharray", "2,2")
@@ -246,21 +271,18 @@
       .attr("font-size", 10)
       .attr("dy", "1em");
 
-    xAxisGroup.selectAll('.tick line')
+    xAxisGroup.selectAll(".tick line")
       .attr("stroke", "#dddddd")
       .attr("shape-rendering", "crispEdges");
 
     // Items group
-    var rectangles = svg.append('g')
+    var rectangles = svg.append("g")
       .selectAll("rect")
       .data(items)
       .enter();
 
     // Draw items boxes
     rectangles.append("rect")
-      .attr("class", function(d) {
-        return "item " + makeSafeForCSS(getGroupName(d));
-      })
       .attr("rx", 3)
       .attr("ry", 3)
       .attr("x", function(d){
@@ -277,19 +299,16 @@
       .attr("height", barHeight)
       .attr("stroke", "none")
       .attr("fill", function(d) {
-        return d.color;
+        return d.pattern || d.color;
       })
       .attr("fill-opacity", 0.5)
       .on("mouseover", function() {
-        d3.select(this).style({cursor:'pointer'});
+        d3.select(this).style({cursor:"pointer"});
       })
-      .on('click', selectOneGroup);
+      .on("click", selectOneGroup);
 
     // Draw items texts
     rectangles.append("text")
-      .attr("class", function(d) {
-        return "item " + makeSafeForCSS(getGroupName(d));
-      })
       .text(function(d){
         return d.name;
       })
@@ -341,7 +360,7 @@
 
     svg.on("mousemove", function () {
       var xCoord = d3.mouse(this)[0],
-          yCoord = d3.mouse(this)[1];
+        yCoord = d3.mouse(this)[1];
 
       if (xCoord > sidePadding) {
         verticalMouse
@@ -358,7 +377,7 @@
 
         verticalMouseText
             .attr("transform", "translate(" + xCoord + "," + (yCoord + verticalMouseTopPadding) + ")")
-            .text(d3.time.format('%b %d')(timeScale.invert(xCoord - sidePadding)))
+            .text(d3.time.format("%b %d")(timeScale.invert(xCoord - sidePadding)))
             .style("display", "block");
       } else {
         verticalMouse.style("display", "none");
@@ -380,40 +399,26 @@
 
   function getGroupName(d) {
     switch (d.type) {
-      case "people":
-        return d.taskGroup;
-      case "task":
-        return d.group;
-      case "group":
-        return d.name;
+    case "people":
+      return d.taskGroup;
+    case "task":
+      return d.group;
+    case "group":
+      return d.name;
     }
   }
 
   function selectOneGroup(d) {
-    var klass = makeSafeForCSS(getGroupName(d));
-
-    if (selected === klass) {
-      d3.selectAll(".item").style("opacity", 1);
-      selected = false;
-    } else {
-      d3.selectAll(".item").style("opacity", 0.2);
-      d3.selectAll("." + klass).style("opacity", 1);
-      selected = klass;
-    }
+    refresh(getGroupName(d));
   }
 
-  function makeSafeForCSS(name) {
-      return "_" + name.toLowerCase().replace(/[^a-z0-9]+/g, function(s) {
-          return '-';
-      });
-  }
-
-  document.addEventListener('DOMContentLoaded', function(){
-    if(typeof window.Roadmap === 'undefined') {
-      init();
+  document.addEventListener("DOMContentLoaded", function(){
+    if(typeof window.Roadmap === "undefined") {
+      parse();
     }
     window.Roadmap = {
-      init: init
+      parse: parse,
+      refresh: refresh
     };
   });
 
