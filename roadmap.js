@@ -5,11 +5,9 @@
 
   var refresh = function(filter, topPadding) {
     if (tasks.length > 0) {
-      node.style.minHeight = node.clientHeight + "px";
       node.innerHTML = "";
       if (filter) {
-        topPadding = (topPadding + window.scrollY - node.getBoundingClientRect().top);
-        topPadding = topPadding < 250 ? 0 : topPadding - 250;
+        topPadding = topPadding < 150 ? 0 : topPadding - 150;
         node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
       }
 
@@ -116,15 +114,15 @@
     var topPadding = 20 + (options.topPadding || 0);
 
     // Init width and height
-    var h = items.length * gap + topPadding + 40;
+    var h = items.length * gap + 40;
     var w = node.clientWidth;
 
     // Init d3
-    var svg = d3.select(node)
-      .append("svg")
-      .attr("width", w)
-      .attr("height", h)
-      .attr("style", "overflow: visible");
+    var svg = options.svg || d3.select(node).append("svg").attr("width", w).attr("style", "overflow: visible");
+
+    svg.attr("height", function() {
+      return parseInt(svg.attr("height") || 0, 10) + h;
+    });
 
     // Sort items
     items.sort(function(a, b) {
@@ -213,7 +211,7 @@
       })
       .attr("x", 10)
       .attr("y", function(d){
-        return d.count * gap / 2 + d.previous * gap + topPadding;
+        return d.count * gap / 2 + d.previous * gap + topPadding + 2;
       })
       .attr("font-size", 11)
       .attr("text-anchor", "start")
@@ -240,12 +238,12 @@
       .scale(timeScale)
       .orient("bottom")
       .ticks(d3.time.monday)
-      .tickSize(-h + topPadding + 20, 0, 0)
+      .tickSize(- svg.attr("height") + topPadding + 20, 0, 0)
       .tickFormat(d3.time.format("%b %d"));
 
     // Draw vertical grid
     var xAxisGroup = svg.append("g")
-      .attr("transform", "translate(" + sidePadding + ", " + (h - 30) + ")")
+      .attr("transform", "translate(" + sidePadding + ", " + (svg.attr("height") - 20) + ")")
       .call(xAxis);
 
     // Now
@@ -328,74 +326,79 @@
       .style("pointer-events", "none");
 
     // Draw vertical mouse helper
-    var verticalMouse = svg.append("line")
-      .attr("x1", 0)
-      .attr("y1", 0)
-      .attr("x2", 0)
-      .attr("y2", 0)
-      .style("stroke", "black")
-      .style("stroke-width", "1px")
-      .style("stroke-dasharray", "2,2")
-      .style("shape-rendering", "crispEdges")
-      .style("pointer-events", "none")
-      .style("display", "none");
+    if (options.svg) {
+      var verticalMouse = svg.append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 0)
+        .attr("y2", 0)
+        .style("stroke", "black")
+        .style("stroke-width", "1px")
+        .style("stroke-dasharray", "2,2")
+        .style("shape-rendering", "crispEdges")
+        .style("pointer-events", "none")
+        .style("display", "none");
 
-    var verticalMouseBox = svg.append("rect")
-      .attr("rx", 3)
-      .attr("ry", 3)
-      .attr("width", 50)
-      .attr("height", barHeight)
-      .attr("stroke", "none")
-      .attr("fill", "black")
-      .attr("fill-opacity", 0.8)
-      .style("display", "none");
+      var verticalMouseBox = svg.append("rect")
+        .attr("rx", 3)
+        .attr("ry", 3)
+        .attr("width", 50)
+        .attr("height", barHeight)
+        .attr("stroke", "none")
+        .attr("fill", "black")
+        .attr("fill-opacity", 0.8)
+        .style("display", "none");
 
-    var verticalMouseText = svg.append("text")
-      .attr("font-size", 11)
-      .attr("font-weight", "bold")
-      .attr("text-anchor", "middle")
-      .attr("text-height", barHeight)
-      .attr("fill", "white")
-      .style("display", "none");
+      var verticalMouseText = svg.append("text")
+        .attr("font-size", 11)
+        .attr("font-weight", "bold")
+        .attr("text-anchor", "middle")
+        .attr("text-height", barHeight)
+        .attr("fill", "white")
+        .style("display", "none");
 
-    var verticalMouseTopPadding = 40;
+      var verticalMouseTopPadding = 40;
 
-    svg.on("mousemove", function () {
-      var xCoord = d3.mouse(this)[0],
-        yCoord = d3.mouse(this)[1];
+      svg.on("mousemove", function () {
+        var xCoord = d3.mouse(this)[0],
+          yCoord = d3.mouse(this)[1];
 
-      if (xCoord > sidePadding) {
-        verticalMouse
-            .attr("x1", xCoord)
-            .attr("y1", topPadding - 10)
-            .attr("x2", xCoord)
-            .attr("y2", h - 30)
-            .style("display", "block");
+        if (xCoord > sidePadding) {
+          verticalMouse
+              .attr("x1", xCoord)
+              .attr("y1", 10)
+              .attr("x2", xCoord)
+              .attr("y2", svg.attr("height") - 20)
+              .style("display", "block");
 
-        verticalMouseBox
-            .attr("x", xCoord - 25)
-            .attr("y", yCoord - (barHeight + 8) / 2 + verticalMouseTopPadding)
-            .style("display", "block");
+          verticalMouseBox
+              .attr("x", xCoord - 25)
+              .attr("y", yCoord - (barHeight + 8) / 2 + verticalMouseTopPadding)
+              .style("display", "block");
 
-        verticalMouseText
-            .attr("transform", "translate(" + xCoord + "," + (yCoord + verticalMouseTopPadding) + ")")
-            .text(d3.time.format("%b %d")(timeScale.invert(xCoord - sidePadding)))
-            .style("display", "block");
-      } else {
+          verticalMouseText
+              .attr("transform", "translate(" + xCoord + "," + (yCoord + verticalMouseTopPadding) + ")")
+              .text(d3.time.format("%b %d")(timeScale.invert(xCoord - sidePadding)))
+              .style("display", "block");
+        } else {
+          verticalMouse.style("display", "none");
+          verticalMouseBox.style("display", "none");
+          verticalMouseText.style("display", "none");
+        }
+      });
+
+      svg.on("mouseleave", function() {
         verticalMouse.style("display", "none");
         verticalMouseBox.style("display", "none");
         verticalMouseText.style("display", "none");
-      }
-    });
+      });
+    }
 
-    svg.on("mouseleave", function() {
-      verticalMouse.style("display", "none");
-      verticalMouseBox.style("display", "none");
-      verticalMouseText.style("display", "none");
-    });
-
+    // options for the 2nd drawing
     return {
-      sidePadding: sidePadding
+      sidePadding: sidePadding,
+      topPadding: h,
+      svg: svg
     };
   };
 
@@ -411,7 +414,7 @@
   }
 
   function selectOneGroup(d) {
-    refresh(getGroupName(d), this.getBoundingClientRect().top);
+    refresh(getGroupName(d), this.getBBox().y);
   }
 
   document.addEventListener("DOMContentLoaded", function(){
