@@ -392,6 +392,8 @@
       verticalMouseText.style("display", "none");
     });
 
+    node.style.minHeight = node.clientHeight + "px";
+
     return {
       sidePadding: sidePadding
     };
