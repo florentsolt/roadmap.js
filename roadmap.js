@@ -5,6 +5,7 @@
 
   var refresh = function(filter, topPadding) {
     if (tasks.length > 0) {
+      node.style.minHeight = node.clientHeight + "px";
       node.innerHTML = "";
       if (filter) {
         topPadding = topPadding < 150 ? 0 : topPadding - 150;
@@ -254,7 +255,7 @@
         .attr("x1", timeScale(now))
         .attr("y1", 0)
         .attr("x2", timeScale(now))
-        .attr("y2", -h + topPadding + 20)
+        .attr("y2", -svg.attr("height") + topPadding + 20)
         .attr("class", "now");
 
       xAxisGroup.selectAll(".now")
