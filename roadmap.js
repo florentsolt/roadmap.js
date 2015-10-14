@@ -8,8 +8,9 @@
       node.style.minHeight = node.clientHeight + "px";
       node.innerHTML = "";
       if (filter) {
-        topPadding = ((topPadding > 150 ? topPadding - 150 : 5) + window.scrollY) + "px";
-        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+        topPadding = (topPadding + window.scrollY - node.getBoundingClientRect().top);
+        topPadding = topPadding < 250 ? 0 : topPadding - 250;
+        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
       }
 
       var options = draw(node, tasks.filter(function(task) {
