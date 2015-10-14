@@ -8,7 +8,7 @@
       node.innerHTML = "";
 
       if (filter) {
-        node.innerHTML = "<a style='display: inline-block; float: right; margin: 5px; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='#' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+        node.innerHTML = "<a style='display: inline-block; float: right; margin: 5px; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
       }
 
       var options = draw(node, tasks.filter(function(task) {
