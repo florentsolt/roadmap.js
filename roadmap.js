@@ -3,12 +3,13 @@
   var people = [];
   var node = null;
 
-  var refresh = function(filter) {
+  var refresh = function(filter, topPadding) {
     if (tasks.length > 0) {
+      node.style.minHeight = node.clientHeight + "px";
       node.innerHTML = "";
-
       if (filter) {
-        node.innerHTML = "<a style='display: inline-block; float: right; margin: 5px; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+        topPadding = ((topPadding > 150 ? topPadding - 150 : 5) + window.scrollY) + "px";
+        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
       }
 
       var options = draw(node, tasks.filter(function(task) {
@@ -392,8 +393,6 @@
       verticalMouseText.style("display", "none");
     });
 
-    node.style.minHeight = node.clientHeight + "px";
-
     return {
       sidePadding: sidePadding
     };
@@ -411,7 +410,7 @@
   }
 
   function selectOneGroup(d) {
-    refresh(getGroupName(d));
+    refresh(getGroupName(d), this.getBoundingClientRect().top);
   }
 
   document.addEventListener("DOMContentLoaded", function(){
