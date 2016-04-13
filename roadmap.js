@@ -40,6 +40,9 @@
     // Tasks
     var colors = d3.scale.category20();
 
+    // For d3
+    var dateFormat = d3.time.format("%Y-%m-%d");
+
     d3.selectAll("div.roadmap").each(function() {
       var currentTask = {};
 
@@ -52,8 +55,10 @@
         if (!currentTask.name && !currentTask.group) {
           texts = line.split(",");
           currentTask.type = "task";
-          currentTask.group = texts[0];
-          currentTask.name = texts.slice(1).join(",");
+          currentTask.group = texts[0].trim();
+          currentTask.name = texts.slice(1).join(",").trim();
+          currentTask.style = currentTask.group.match(/^\*/) ? "bold" : "normal";
+          currentTask.group = currentTask.group.replace(/^\*\s+/, "");
           currentTask.color = colors(currentTask.group);
           continue;
         }
@@ -61,8 +66,9 @@
         // 2nd line, dates from and to
         if (!currentTask.from && !currentTask.to) {
           texts = line.replace(/[^0-9\-\/]+/, " ").split(" ");
-          currentTask.from = texts[0];
-          currentTask.to = texts[1];
+          currentTask.from = dateFormat.parse(texts[0]);
+          currentTask.to = dateFormat.parse(texts[1]);
+          currentTask.to.setHours(currentTask.to.getHours() + 24); // Set the end of the day
           continue;
         }
 
@@ -73,7 +79,7 @@
 
           if (matches) {
             involvement = parseInt(matches[1], 10);
-            line = line.substring(0, line.length - matches[0].length);
+            line = line.substring(0, line.length - matches[0].length).trim();
           } else {
             involvement = 100;
           }
@@ -106,8 +112,6 @@
   };
 
   var draw = function(node, items, options) {
-    // For d3
-    var dateFormat = d3.time.format("%Y-%m-%d");
 
     // Drawing
     var barHeight = 20;
@@ -128,7 +132,7 @@
     // Sort items
     items.sort(function(a, b) {
       if (a.group === b.group) {
-        return dateFormat.parse(a.from) > dateFormat.parse(b.from) ? 1 : -1;
+        return a.from > b.from ? 1 : -1;
       } else {
         return a.group > b.group ? 1 : -1;
       }
@@ -157,7 +161,8 @@
           type: "group",
           name: items[i].group,
           count: count,
-          previous: total
+          previous: total,
+          style: items[i].style
         });
         total += count;
       }
@@ -215,6 +220,9 @@
         return d.count * gap / 2 + d.previous * gap + topPadding + 2;
       })
       .attr("font-size", 11)
+      .attr("font-weight", function(d) {
+        return d.style;
+      })
       .attr("text-anchor", "start")
       .attr("text-height", 14)
       .attr("fill", "#000");
@@ -226,11 +234,10 @@
       .clamp(true)
       .domain([
         d3.min(items, function(d) {
-          return dateFormat.parse(d.from);
+          return d.from;
         }),
         d3.max(items, function(d) {
-          var date = dateFormat.parse(d.to);
-          return date.setHours(date.getHours() + 24);
+          return d.to;
         })
       ]).range([0, w - sidePadding - 15]);
 
@@ -278,6 +285,7 @@
 
     // Items group
     var rectangles = svg.append("g")
+      .attr("transform", "translate(" + sidePadding + ", 0)")
       .selectAll("rect")
       .data(items)
       .enter();
@@ -287,15 +295,13 @@
       .attr("rx", 3)
       .attr("ry", 3)
       .attr("x", function(d){
-        return timeScale(dateFormat.parse(d.from)) + sidePadding;
+        return timeScale(d.from);
       })
       .attr("y", function(d, i){
         return i * gap + topPadding;
       })
       .attr("width", function(d){
-        var end = dateFormat.parse(d.to);
-        end.setHours(end.getHours() + 24);
-        return timeScale(end) - timeScale(dateFormat.parse(d.from));
+        return timeScale(d.to) - timeScale(d.from);
       })
       .attr("height", barHeight)
       .attr("stroke", "none")
@@ -314,13 +320,15 @@
         return d.name;
       })
       .attr("x", function(d){
-        return (timeScale(dateFormat.parse(d.to)) - timeScale(dateFormat.parse(d.from))) / 2 +
-          timeScale(dateFormat.parse(d.from)) + sidePadding;
+        return timeScale(d.from) + (timeScale(d.to) - timeScale(d.from)) / 2;
       })
       .attr("y", function(d, i){
         return i * gap + 14 + topPadding;
       })
       .attr("font-size", 11)
+      .attr("font-weight", function(d) {
+        return d.style;
+      })
       .attr("text-anchor", "middle")
       .attr("text-height", barHeight)
       .attr("fill", "#000")
