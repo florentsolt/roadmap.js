@@ -55,7 +55,7 @@
         if (!currentTask.name && !currentTask.group) {
           texts = line.split(",");
           currentTask.type = "task";
-          currentTask.group = texts[0].trim();
+          currentTask.group = texts.slice(0, -1).join(",").trim();
           currentTask.name = texts.slice(-1).join(",").trim();
           currentTask.style = currentTask.group.match(/^\*/) ? "bold" : "normal";
           currentTask.group = currentTask.group.replace(/^\*\s+/, "");
