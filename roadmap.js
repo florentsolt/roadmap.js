@@ -1,37 +1,38 @@
 (function() {
-  var tasks = [];
-  var people = [];
-  var node = null;
 
   var refresh = function(filter, topPadding) {
-    if (tasks.length > 0) {
-      node.style.minHeight = node.clientHeight + "px";
-      node.innerHTML = "";
+    if (this.tasks.length > 0) {
+      this.node.style.minHeight = this.node.clientHeight + "px";
+      this.node.innerHTML = "";
       if (filter) {
         topPadding = topPadding < 150 ? 0 : topPadding - 150;
-        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+        this.node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:null'>&larr; Back to the full roadmap</a>";
+        var currentInstance = this;
+        this.node.getElementsByTagName("A")[0].onclick = function() {
+          refresh.apply(currentInstance);
+        };
       }
 
-      var options = draw(node, tasks.filter(function(task) {
+      var options = draw.apply(this, [this.tasks.filter(function(task) {
         if (filter && task.group !== filter) {
           return false;
         } else {
           return true;
         }
-      }), {});
+      }), {}]);
 
-      people.sort(function(a, b) {
+      this.people.sort(function(a, b) {
         return a.group > b.group ? 1 : -1;
       });
 
-      if (people.length > 0) {
-        draw(node, people.filter(function(person) {
+      if (this.people.length > 0) {
+        draw.apply(this, [this.people.filter(function(person) {
           if (filter && person.taskGroup !== filter) {
             return false;
           } else {
             return true;
           }
-        }), options);
+        }), options]);
       }
     }
   };
@@ -44,9 +45,14 @@
     var dateFormat = d3.time.format("%Y-%m-%d");
 
     d3.selectAll("div.roadmap").each(function() {
+      var currentInstance = {
+        tasks: [],
+        people: [],
+        node: this
+      };
       var currentTask = {};
 
-      var lines = (this.textContent || this.innerHTML || "").split("\n");
+      var lines = (currentInstance.node.textContent || currentInstance.node.innerHTML || "").split("\n");
       for (var j = 0, line; line = lines[j], j < lines.length; j++) {
         var texts;
         line = line.replace(/^\s+|\s+$/g, "");
@@ -84,7 +90,7 @@
             involvement = 100;
           }
 
-          people.push({
+          currentInstance.people.push({
             type: "people",
             group: line,
             from: currentTask.from,
@@ -99,19 +105,19 @@
 
         // last line, empty
         if (line === "" && currentTask.name) {
-          tasks.push(currentTask);
+          currentInstance.tasks.push(currentTask);
           currentTask = {};
           continue;
         }
       }
 
-      node = this;
-      refresh();
+      refresh.apply(currentInstance);
     });
 
   };
 
-  var draw = function(node, items, options) {
+  var draw = function(items, options) {
+    var currentInstance = this;
 
     // Drawing
     var barHeight = 20;
@@ -120,10 +126,10 @@
 
     // Init width and height
     var h = items.length * gap + 40;
-    var w = node.clientWidth;
+    var w = this.node.clientWidth;
 
     // Init d3
-    var svg = options.svg || d3.select(node).append("svg").attr("width", w).attr("style", "overflow: visible");
+    var svg = options.svg || d3.select(this.node).append("svg").attr("width", w).attr("style", "overflow: visible");
 
     svg.attr("height", function() {
       return parseInt(svg.attr("height") || 0, 10) + h;
@@ -312,7 +318,9 @@
       .on("mouseover", function() {
         d3.select(this).style({cursor:"pointer"});
       })
-      .on("click", selectOneGroup);
+      .on("click",   function (d) {
+        refresh.apply(currentInstance, [getGroupName(d), this.getBBox().y]);
+      });
 
     // Draw items texts
     rectangles.append("text")
@@ -422,18 +430,11 @@
     }
   }
 
-  function selectOneGroup(d) {
-    refresh(getGroupName(d), this.getBBox().y);
-  }
-
   document.addEventListener("DOMContentLoaded", function(){
-    if(typeof window.Roadmap === "undefined") {
+    if(typeof window.__isRoadmapLoaded === "undefined") {
       parse();
+      window.__isRoadmapLoaded = parse;
     }
-    window.Roadmap = {
-      parse: parse,
-      refresh: refresh
-    };
   });
 
 })();
