@@ -1,18 +1,30 @@
 (function() {
-  var tasks = [];
-  var people = [];
-  var node = null;
+  var tasks = {};
+  var people = {};
+  var nodes = {};
 
-  var refresh = function(filter, topPadding) {
-    if (tasks.length > 0) {
+  var reset = function () {
+    tasks = {};
+    people = {};
+    nodes = {};
+  };
+
+  var getNodeIndex = function (node) {
+    var nodeRect = node.getBoundingClientRect();
+    return nodeRect.top + '0' + nodeRect.left;
+  };
+
+  var refresh = function(filter, topPadding, nodeIndex) {
+    if (tasks[nodeIndex].length > 0) {
+      var node = nodes[nodeIndex];
       node.style.minHeight = node.clientHeight + "px";
       node.innerHTML = "";
       if (filter) {
         topPadding = topPadding < 150 ? 0 : topPadding - 150;
-        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh()'>&larr; Back to the full roadmap</a>";
+        node.innerHTML = "<a style='margin: 5px; margin-top: " + topPadding + "px; display: inline-block; float: right; border-radius: 3px; color: #fff; font-size: 12px; background: #999; padding: 6px 20px 6px 20px; text-decoration: none;' href='javascript:' onclick='Roadmap.refresh(null, null," + nodeIndex + ")'>&larr; Back to the full roadmap</a>";
       }
 
-      var options = draw(node, tasks.filter(function(task) {
+      var options = draw(nodeIndex, node, tasks[nodeIndex].filter(function(task) {
         if (filter && task.group !== filter) {
           return false;
         } else {
@@ -20,12 +32,12 @@
         }
       }), {});
 
-      people.sort(function(a, b) {
-        return a.group > b.group ? 1 : -1;
+      people[nodeIndex].sort(function(a, b) {
+        return (a.group > b.group) - (a.group < b.group);
       });
 
-      if (people.length > 0) {
-        draw(node, people.filter(function(person) {
+      if (people[nodeIndex].length > 0) {
+        draw(nodeIndex, node, people[nodeIndex].filter(function(person) {
           if (filter && person.taskGroup !== filter) {
             return false;
           } else {
@@ -44,6 +56,9 @@
     var dateFormat = d3.time.format("%Y-%m-%d");
 
     d3.selectAll("div.roadmap").each(function() {
+      var nodeIndex = getNodeIndex(this);
+      tasks[nodeIndex] = [];
+      people[nodeIndex] = [];
       var currentTask = {};
 
       var lines = (this.textContent || this.innerHTML || "").split("\n");
@@ -84,7 +99,7 @@
             involvement = 100;
           }
 
-          people.push({
+          people[nodeIndex].push({
             type: "people",
             group: line,
             from: currentTask.from,
@@ -99,19 +114,19 @@
 
         // last line, empty
         if (line === "" && currentTask.name) {
-          tasks.push(currentTask);
+          currentTask.group = !currentTask.group ? currentTask.name : currentTask.group;
+          tasks[nodeIndex].push(currentTask);
           currentTask = {};
           continue;
         }
       }
-
-      node = this;
-      refresh();
+      nodes[nodeIndex] = this;
+      refresh(null, null, nodeIndex);
     });
 
   };
 
-  var draw = function(node, items, options) {
+  var draw = function(nodeIndex, node, items, options) {
 
     // Drawing
     var barHeight = 20;
@@ -312,7 +327,9 @@
       .on("mouseover", function() {
         d3.select(this).style({cursor:"pointer"});
       })
-      .on("click", selectOneGroup);
+      .on("click", function(d) {
+        selectOneGroup(d, this, nodeIndex);
+      });
 
     // Draw items texts
     rectangles.append("text")
@@ -422,18 +439,19 @@
     }
   }
 
-  function selectOneGroup(d) {
-    refresh(getGroupName(d), this.getBBox().y);
+  function selectOneGroup(d, _this, nodeIndex) {
+    refresh(getGroupName(d), _this.getBBox().y, nodeIndex);
   }
 
   document.addEventListener("DOMContentLoaded", function(){
     if(typeof window.Roadmap === "undefined") {
       parse();
+      window.Roadmap = {
+        parse: parse,
+        refresh: refresh,
+        reset: reset
+      };
     }
-    window.Roadmap = {
-      parse: parse,
-      refresh: refresh
-    };
   });
 
 })();
